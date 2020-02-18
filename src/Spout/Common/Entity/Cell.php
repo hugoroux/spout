@@ -65,22 +65,38 @@ class Cell
     protected $style;
 
     /**
+     * The formula
+     * @var null|String
+     */
+    protected $formula;
+    
+    /**
      * @param $value mixed
      * @param Style|null $style
      */
-    public function __construct($value, Style $style = null)
+    public function __construct($value, Style $style = null, $type = null, $formula = null)
     {
-        $this->setValue($value);
+        $this->setValue($value, $type);
         $this->setStyle($style);
+        $this->setFormula($formula);
+        
+        \Yii::info("CELL Construct '" . $this->getValue() . "' " .$this->getType());
+        
     }
 
     /**
      * @param mixed|null $value
      */
-    public function setValue($value)
+    public function setValue($value, $type = null)
     {
         $this->value = $value;
-        $this->type = $this->detectType($value);
+        
+        if($type != null){
+            \Yii::info("SetType To ". $type);
+            $this->setType($type);
+        }else{
+            $this->type = $this->detectType($value);
+        }
     }
 
     /**
@@ -131,6 +147,22 @@ class Cell
         $this->type = $type;
     }
 
+    /**
+     * @return int|null
+     */
+    public function getFormula()
+    {
+        return $this->formula;
+    }
+    
+    /**
+     * @param int $type
+     */
+    public function setFormula($formula)
+    {
+        $this->formula = $formula;
+    }
+    
     /**
      * Get the current value type
      *
@@ -198,6 +230,15 @@ class Cell
         return $this->type === self::TYPE_DATE;
     }
 
+    /**
+     * @return bool
+     */
+    public function isFormula()
+    {
+        return $this->type === self::TYPE_FORMULA;
+    }
+    
+    
     /**
      * @return bool
      */

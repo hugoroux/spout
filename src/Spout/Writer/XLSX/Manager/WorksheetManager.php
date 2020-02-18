@@ -296,6 +296,9 @@ EOD;
      */
     private function getCellXML($rowIndexOneBased, $columnIndexZeroBased, Cell $cell, $styleId)
     {
+        
+        \Yii::info("Cell is " . $cell->getType());
+        
         $columnLetters = CellHelper::getColumnLettersFromColumnIndex($columnIndexZeroBased);
         $cellXML = '<c r="' . $columnLetters . $rowIndexOneBased . '"';
         $cellXML .= ' s="' . $styleId . '"';
@@ -317,6 +320,15 @@ EOD;
                 // NOTE: not appending to $cellXML is the right behavior!!
                 $cellXML = '';
             }
+        }elseif($cell->isFormula()){
+            //We need to subtract 1 row from the $rowIndexOneBased and ensure it is not zero else make it $rowIndexOneBased
+            $formulaRow = $rowIndexOneBased - 1;
+            
+            if($formulaRow == 0) {
+                $formulaRow = $rowIndexOneBased;
+            }
+            
+            $cellXML .= '><f aca="false">'.str_replace("%%REPLACE%%", $formulaRow, $cell->getFormula()).'</f><v>' . $cell->getValue() . '</v></c>';
         } else {
             throw new InvalidArgumentException('Trying to add a value with an unsupported type: ' . \gettype($cell->getValue()));
         }

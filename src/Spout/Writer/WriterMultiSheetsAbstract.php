@@ -171,6 +171,7 @@ abstract class WriterMultiSheetsAbstract extends WriterAbstract
     }
     
     /**
+     * Sets the specified column's width globally, will apply for all rows
      * @param float|null $width
      * @param array $columns One or more columns with this width
      * @throws WriterNotOpenedException
@@ -194,8 +195,9 @@ abstract class WriterMultiSheetsAbstract extends WriterAbstract
     }
     
     /**
-     * @param float $height
-     * @throws WriterNotOpenedException
+     * When supplyijng a mergeCells range it will be added and all the supplied merged cell values will be merged.
+     * @param String $startIndex e.g. A1
+     * @param String $endIndex e.g. A2
      */
     public function mergeCells(String $startIndex , String $endIndex)
     {
