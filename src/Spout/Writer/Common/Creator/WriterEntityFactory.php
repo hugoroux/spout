@@ -92,14 +92,22 @@ class WriterEntityFactory
     }
 
     /**
+     * CellValue can be a array that has finer control over the writing. E.g.  [$subtotal , null , Cell::TYPE_FORMULA, "Sum(K11:K%%REPLACE%%)"]
+     * where values for the Cell Array are [value , style , type , formula]
      * @param array $cellValues
      * @param Style|null $rowStyle
      * @return Row
      */
     public static function createRowFromArray(array $cellValues = [], Style $rowStyle = null)
     {
-        $cells = \array_map(function ($cellValue) {
-            return new Cell($cellValue);
+        $cells = \array_map(function ($cellValue ) {
+            if(is_array($cellValue)){
+                // , $cellStyle = null, $cellType = null, $cellFormula = null
+                return new Cell($cellValue[0], $cellValue[1], $cellValue[2],$cellValue[3]);
+                
+            }else{
+                return new Cell($cellValue);
+            }
         }, $cellValues);
 
         return new Row($cells, $rowStyle);
