@@ -12,6 +12,41 @@ use Box\Spout\Writer\Common\Entity\Worksheet;
 interface WorksheetManagerInterface
 {
     /**
+     * @param float|null $width
+     */
+    public function setDefaultColumnWidth($width);
+
+    /**
+     * @param float|null $height
+     */
+    public function setDefaultRowHeight($height);
+
+    /**
+     * @param float|null $height
+     */
+    public function setCurrentRowHeight($height);
+    
+    /**
+     * @param float $width
+     * @param array $columns One or more columns with this width
+     */
+    public function setColumnWidth(float $width, ...$columns);
+
+    /**
+     * @param float $width The width to set
+     * @param int $start First column index of the range
+     * @param int $end Last column index of the range
+     */
+    public function setColumnWidthForRange(float $width, int $start, int $end);
+
+    /**
+     * 
+     * @param String $startIndex
+     * @param String $endIndex
+     */
+    public function mergeCells(Worksheet $worksheet, String $startIndex, String $endIndex);
+    
+    /**
      * Adds a row to the worksheet.
      *
      * @param Worksheet $worksheet The worksheet to add the row to

@@ -14,6 +14,7 @@ use Box\Spout\Writer\Common\Creator\InternalEntityFactory;
 use Box\Spout\Writer\Common\Entity\Options;
 use Box\Spout\Writer\Common\Entity\Worksheet;
 use Box\Spout\Writer\Common\Helper\CellHelper;
+use Box\Spout\Writer\Common\Manager\ManagesCellSize;
 use Box\Spout\Writer\Common\Manager\RowManager;
 use Box\Spout\Writer\Common\Manager\Style\StyleMerger;
 use Box\Spout\Writer\Common\Manager\WorksheetManagerInterface;
@@ -25,6 +26,8 @@ use Box\Spout\Writer\XLSX\Manager\Style\StyleManager;
  */
 class WorksheetManager implements WorksheetManagerInterface
 {
+    use ManagesCellSize;
+
     /**
      * Maximum number of characters a cell can contain
      * @see https://support.office.com/en-us/article/Excel-specifications-and-limits-16c69c74-3d6a-4aaf-ba35-e6eb276e8eaa [Excel 2007]
@@ -62,6 +65,13 @@ EOD;
     /** @var InternalEntityFactory Factory to create entities */
     private $entityFactory;
 
+    /** @var bool Whether rows have been written */
+    private $hasWrittenRows = false;
+
+    /** @var Array What Cells to merge for the WorkSheet */
+    private $mergeCells = [];
+    
+    
     /**
      * WorksheetManager constructor.
      *
@@ -84,7 +94,11 @@ EOD;
         StringHelper $stringHelper,
         InternalEntityFactory $entityFactory
     ) {
+        
         $this->shouldUseInlineStrings = $optionsManager->getOption(Options::SHOULD_USE_INLINE_STRINGS);
+        $this->setDefaultColumnWidth($optionsManager->getOption(Options::DEFAULT_COLUMN_WIDTH));
+        $this->setDefaultRowHeight($optionsManager->getOption(Options::DEFAULT_ROW_HEIGHT));
+        $this->columnWidths = $optionsManager->getOption(Options::COLUMN_WIDTHS) ?? [];
         $this->rowManager = $rowManager;
         $this->styleManager = $styleManager;
         $this->styleMerger = $styleMerger;
@@ -113,7 +127,6 @@ EOD;
         $worksheet->setFilePointer($sheetFilePointer);
 
         \fwrite($sheetFilePointer, self::SHEET_XML_FILE_HEADER);
-        \fwrite($sheetFilePointer, '<sheetData>');
     }
 
     /**
@@ -147,38 +160,113 @@ EOD;
      *
      * @param Worksheet $worksheet The worksheet to add the row to
      * @param Row $row The row to be written
-     * @throws IOException If the data cannot be written
      * @throws InvalidArgumentException If a cell value's type is not supported
+     * @throws IOException If the data cannot be written
      * @return void
      */
     private function addNonEmptyRow(Worksheet $worksheet, Row $row)
     {
+        $sheetFilePointer = $worksheet->getFilePointer();
+        if (!$this->hasWrittenRows) {
+            fwrite($sheetFilePointer, $this->getXMLFragmentForDefaultCellSizing());
+            fwrite($sheetFilePointer, $this->getXMLFragmentForColumnWidths());
+            fwrite($sheetFilePointer, '<sheetData>');
+        }
+
         $rowStyle = $row->getStyle();
         $rowIndexOneBased = $worksheet->getLastWrittenRowIndex() + 1;
         $numCells = $row->getNumCells();
 
-        $rowXML = '<row r="' . $rowIndexOneBased . '" spans="1:' . $numCells . '">';
+        $selectedRowHeight = isset($this->currentRowHeight) ? $this->currentRowHeight : '0';
+        
+        $hasCustomHeight = $this->currentRowHeight > 0 ? '1' : '0' ; // ($this->defaultRowHeight > 0 ? '1' : '0') ;
+        $rowXML = "<row r=\"{$rowIndexOneBased}\" spans=\"1:{$numCells}\" " ;
+        if($selectedRowHeight){
+            $rowXML .= " ht=\"{$selectedRowHeight}\" customHeight=\"{$hasCustomHeight}\">";
+            
+        }else{
+            $rowXML .= " customHeight=\"{$hasCustomHeight}\">";
+            
+        }
+        
 
         foreach ($row->getCells() as $columnIndexZeroBased => $cell) {
             $rowXML .= $this->applyStyleAndGetCellXML($cell, $rowStyle, $rowIndexOneBased, $columnIndexZeroBased);
         }
 
         $rowXML .= '</row>';
-
-        $wasWriteSuccessful = \fwrite($worksheet->getFilePointer(), $rowXML);
+        
+        $wasWriteSuccessful = \fwrite($sheetFilePointer, $rowXML);
         if ($wasWriteSuccessful === false) {
             throw new IOException("Unable to write data in {$worksheet->getFilePath()}");
         }
+        $this->hasWrittenRows = true;
     }
+    
+    //https://playground.jsreport.net/w/anon/rkX89bHD-2
+    // 
+    
+    public function mergeCells(Worksheet $worksheet, String $startIndex , String $endIndex)
+    {
+        
+        $currentWorksheet = $worksheet->getId();
+        $workingMergeCells = [];
+        
+        if(isset($this->mergeCells[$currentWorksheet])){
+            $workingMergeCells = $this->mergeCells[$currentWorksheet];
+        }
+        
+        array_push($workingMergeCells, ['startIndex' => $startIndex , 'endIndex' => $endIndex]);      
+        
+        $this->mergeCells[$currentWorksheet] = $workingMergeCells ;
+    }
+    
+    
+    /**
+     * 
+     * @param Worksheet $worksheet
+     * @throws IOException
+     */
+    private function addMergeCells(Worksheet $worksheet){
+        $currentWorksheet = $worksheet->getId();
+        $sheetFilePointer = $worksheet->getFilePointer();
+        if (!$this->hasWrittenRows) {
+            fwrite($sheetFilePointer, $this->getXMLFragmentForDefaultCellSizing());
+            fwrite($sheetFilePointer, $this->getXMLFragmentForColumnWidths());
+            fwrite($sheetFilePointer, '<sheetData>');
+        }
+        $workingMergeCells = [];
+
+        if(isset($this->mergeCells[$currentWorksheet])){
+            $workingMergeCells = $this->mergeCells[$currentWorksheet];
+        }
+        $mergeCellXML = "<mergeCells> ";
+        foreach ($workingMergeCells as $mergeCell){
+            $mergeCellXML .= " <mergeCell ref=\"{$mergeCell['startIndex']}:{$mergeCell['endIndex']}\"/> ";
+            
+        }
+        
+        $mergeCellXML .=" </mergeCells>";
+        
+        \Yii::info($mergeCellXML);
+        
+        
+        $wasWriteSuccessful = \fwrite($sheetFilePointer, $mergeCellXML);
+        if ($wasWriteSuccessful === false) {
+            throw new IOException("Unable to write data in {$worksheet->getFilePath()}");
+        }
+        $this->hasWrittenRows = true;
+    }
+    
 
     /**
      * Applies styles to the given style, merging the cell's style with its row's style
      * Then builds and returns xml for the cell.
      *
-     * @param Cell  $cell
+     * @param Cell $cell
      * @param Style $rowStyle
-     * @param int   $rowIndexOneBased
-     * @param int   $columnIndexZeroBased
+     * @param int $rowIndexOneBased
+     * @param int $columnIndexZeroBased
      *
      * @throws InvalidArgumentException If the given value cannot be processed
      * @return string
@@ -198,10 +286,10 @@ EOD;
     /**
      * Builds and returns xml for a single cell.
      *
-     * @param int  $rowIndexOneBased
-     * @param int  $columnIndexZeroBased
+     * @param int $rowIndexOneBased
+     * @param int $columnIndexZeroBased
      * @param Cell $cell
-     * @param int  $styleId
+     * @param int $styleId
      *
      * @throws InvalidArgumentException If the given value cannot be processed
      * @return string
@@ -260,6 +348,43 @@ EOD;
     }
 
     /**
+     * Construct column width references xml to inject into worksheet xml file
+     *
+     * @return string
+     */
+    public function getXMLFragmentForColumnWidths()
+    {
+        if (empty($this->columnWidths)) {
+            return '';
+        }
+        $xml = '<cols>';
+        foreach ($this->columnWidths as $entry) {
+            $xml .= '<col min="' . $entry[0] . '" max="' . $entry[1] . '" width="' . $entry[2] . '" customWidth="true"/>';
+        }
+        $xml .= '</cols>';
+
+        return $xml;
+    }
+
+    /**
+     * Constructs default row height and width xml to inject into worksheet xml file
+     *
+     * @return string
+     */
+    public function getXMLFragmentForDefaultCellSizing()
+    {
+        $rowHeightXml = empty($this->defaultRowHeight) ? '' : " defaultRowHeight=\"{$this->defaultRowHeight}\"";
+        $colWidthXml = empty($this->defaultColumnWidth) ? '' : " defaultColWidth=\"{$this->defaultColumnWidth}\"";
+        if (empty($colWidthXml) && empty($rowHeightXml)) {
+            return '';
+        }
+        // Ensure that the required defaultRowHeight is set
+        $rowHeightXml = empty($rowHeightXml) ? ' defaultRowHeight="0"' : $rowHeightXml;
+
+        return "<sheetFormatPr{$colWidthXml}{$rowHeightXml}/>";
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function close(Worksheet $worksheet)
@@ -270,7 +395,11 @@ EOD;
             return;
         }
 
-        \fwrite($worksheetFilePointer, '</sheetData>');
+        if ($this->hasWrittenRows) {
+            \fwrite($worksheetFilePointer, '</sheetData>');
+        }
+        $this->addMergeCells($worksheet);
+        
         \fwrite($worksheetFilePointer, '</worksheet>');
         \fclose($worksheetFilePointer);
     }
