@@ -156,16 +156,6 @@ abstract class WorkbookManagerAbstract implements WorkbookManagerInterface
     }
 
     /**
-     * Starts the current sheet and opens the file pointer
-     *
-     * @throws IOException
-     */
-    public function startCurrentSheet()
-    {
-        $this->worksheetManager->startSheet($this->getCurrentWorksheet());
-    }
-
-    /**
      * Sets the given sheet as the current one. New data will be written to this sheet.
      * The writing will resume where it stopped (i.e. data won't be truncated).
      *

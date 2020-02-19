@@ -45,7 +45,7 @@ interface WorkbookManagerInterface
     /**
      * Starts the current sheet and opens its file pointer
      */
-    public function startCurrentSheet();
+//     public function startCurrentSheet();
 
     /**
      * @param float $width

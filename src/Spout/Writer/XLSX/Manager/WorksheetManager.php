@@ -127,6 +127,10 @@ EOD;
         $worksheet->setFilePointer($sheetFilePointer);
 
         \fwrite($sheetFilePointer, self::SHEET_XML_FILE_HEADER);
+        \fwrite($sheetFilePointer, $this->getXMLFragmentForDefaultCellSizing());
+        \fwrite($sheetFilePointer, $this->getXMLFragmentForColumnWidths());
+        \fwrite($sheetFilePointer, '<sheetData>');
+        
     }
 
     /**
@@ -167,11 +171,6 @@ EOD;
     private function addNonEmptyRow(Worksheet $worksheet, Row $row)
     {
         $sheetFilePointer = $worksheet->getFilePointer();
-        if (!$this->hasWrittenRows) {
-            fwrite($sheetFilePointer, $this->getXMLFragmentForDefaultCellSizing());
-            fwrite($sheetFilePointer, $this->getXMLFragmentForColumnWidths());
-            fwrite($sheetFilePointer, '<sheetData>');
-        }
 
         $rowStyle = $row->getStyle();
         $rowIndexOneBased = $worksheet->getLastWrittenRowIndex() + 1;
@@ -248,9 +247,6 @@ EOD;
         
         $mergeCellXML .=" </mergeCells>";
         
-        \Yii::info($mergeCellXML);
-        
-        
         $wasWriteSuccessful = \fwrite($sheetFilePointer, $mergeCellXML);
         if ($wasWriteSuccessful === false) {
             throw new IOException("Unable to write data in {$worksheet->getFilePath()}");
@@ -296,8 +292,6 @@ EOD;
      */
     private function getCellXML($rowIndexOneBased, $columnIndexZeroBased, Cell $cell, $styleId)
     {
-        
-        \Yii::info("Cell is " . $cell->getType());
         
         $columnLetters = CellHelper::getColumnLettersFromColumnIndex($columnIndexZeroBased);
         $cellXML = '<c r="' . $columnLetters . $rowIndexOneBased . '"';

@@ -80,8 +80,6 @@ class Cell
         $this->setStyle($style);
         $this->setFormula($formula);
         
-        \Yii::info("CELL Construct '" . $this->getValue() . "' " .$this->getType());
-        
     }
 
     /**
