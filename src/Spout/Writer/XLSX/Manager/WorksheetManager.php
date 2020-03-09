@@ -231,7 +231,6 @@ EOD;
         $sheetFilePointer = $worksheet->getFilePointer();
         if (!$this->hasWrittenRows) {
             fwrite($sheetFilePointer, $this->getXMLFragmentForDefaultCellSizing());
-            fwrite($sheetFilePointer, $this->getXMLFragmentForColumnWidths());
             fwrite($sheetFilePointer, '<sheetData>');
         }
         $workingMergeCells = [];

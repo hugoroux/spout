@@ -72,7 +72,8 @@ abstract class WriterMultiSheetsAbstract extends WriterAbstract
     {
         if (!$this->workbookManager) {
             $this->workbookManager = $this->managerFactory->createWorkbookManager($this->optionsManager);
-            $this->workbookManager->addNewSheetAndMakeItCurrent();
+	    //Call the addNewSheetAndMakeItCurrent explicitally after open to ensure we do column widths if present
+            //$this->workbookManager->addNewSheetAndMakeItCurrent();
         }
     }
 
