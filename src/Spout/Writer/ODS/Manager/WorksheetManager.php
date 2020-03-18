@@ -274,8 +274,8 @@ class WorksheetManager implements WorksheetManagerInterface
      * @param int $start First column index of the range
      * @param int $end Last column index of the range
      */
-    public function setColumnWidthForRange(float $width, int $start, int $end)
+    public function setColumnWidthForRange(float $width, int $start, int $end, $flush = false)
     {
-        $this->styleManager->setColumnWidthForRange($width, $start, $end);
+        $this->styleManager->setColumnWidthForRange($width, $start, $end, $flush);
     }
 }

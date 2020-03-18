@@ -238,19 +238,29 @@ EOD;
         if(isset($this->mergeCells[$currentWorksheet])){
             $workingMergeCells = $this->mergeCells[$currentWorksheet];
         }
-        $mergeCellXML = "<mergeCells> ";
+        $mergeCellXML = "";
+        
+        if(!empty($workingMergeCells)){
+            $mergeCellXML = "<mergeCells>";
+        }
+        
         foreach ($workingMergeCells as $mergeCell){
-            $mergeCellXML .= " <mergeCell ref=\"{$mergeCell['startIndex']}:{$mergeCell['endIndex']}\"/> ";
+            $mergeCellXML .= "<mergeCell ref=\"{$mergeCell['startIndex']}:{$mergeCell['endIndex']}\"/>";
             
         }
         
-        $mergeCellXML .=" </mergeCells>";
-        
-        $wasWriteSuccessful = \fwrite($sheetFilePointer, $mergeCellXML);
-        if ($wasWriteSuccessful === false) {
-            throw new IOException("Unable to write data in {$worksheet->getFilePath()}");
+        if(!empty($workingMergeCells)){
+            $mergeCellXML .="</mergeCells>";
         }
-        $this->hasWrittenRows = true;
+        
+        if(!empty($mergeCellXML)){
+            $wasWriteSuccessful = \fwrite($sheetFilePointer, $mergeCellXML);
+            if ($wasWriteSuccessful === false) {
+                throw new IOException("Unable to write data in {$worksheet->getFilePath()}");
+            }
+            $this->hasWrittenRows = true;
+        }
+        
     }
     
 

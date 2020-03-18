@@ -315,9 +315,9 @@ abstract class WorkbookManagerAbstract implements WorkbookManagerInterface
      * @param int $start First column index of the range
      * @param int $end Last column index of the range
      */
-    public function setColumnWidthForRange(float $width, int $start, int $end)
+    public function setColumnWidthForRange(float $width, int $start, int $end, $flush = false)
     {
-        $this->worksheetManager->setColumnWidthForRange($width, $start, $end);
+        $this->worksheetManager->setColumnWidthForRange($width, $start, $end, $flush);
     }
 
     /**

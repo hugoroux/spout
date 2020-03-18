@@ -90,7 +90,6 @@ class Cell
         $this->value = $value;
         
         if($type != null){
-            \Yii::info("SetType To ". $type);
             $this->setType($type);
         }else{
             $this->type = $this->detectType($value);

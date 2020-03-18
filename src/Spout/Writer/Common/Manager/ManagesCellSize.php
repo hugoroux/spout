@@ -67,8 +67,12 @@ trait ManagesCellSize
      * @param int $start First column index of the range
      * @param int $end Last column index of the range
      */
-    public function setColumnWidthForRange(float $width, int $start, int $end)
+    public function setColumnWidthForRange(float $width, int $start, int $end, $flush = false)
     {
+        if ($flush) {
+        unset($this->columnWidths);
+        $this->columnWidths = [];
+        }
         $this->columnWidths[] = [$start, $end, $width];
     }
 }

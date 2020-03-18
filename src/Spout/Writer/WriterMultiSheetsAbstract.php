@@ -72,8 +72,7 @@ abstract class WriterMultiSheetsAbstract extends WriterAbstract
     {
         if (!$this->workbookManager) {
             $this->workbookManager = $this->managerFactory->createWorkbookManager($this->optionsManager);
-	    //Call the addNewSheetAndMakeItCurrent explicitally after open to ensure we do column widths if present
-            //$this->workbookManager->addNewSheetAndMakeItCurrent();
+           // $this->workbookManager->addNewSheetAndMakeItCurrent();
         }
     }
 
@@ -189,10 +188,10 @@ abstract class WriterMultiSheetsAbstract extends WriterAbstract
      * @param int $end Last column index of the range
      * @throws WriterNotOpenedException
      */
-    public function setColumnWidthForRange(float $width, int $start, int $end)
+    public function setColumnWidthForRange(float $width, int $start, int $end, $flush = false)
     {
         $this->throwIfWorkbookIsNotAvailable();
-        $this->workbookManager->setColumnWidthForRange($width, $start, $end);
+        $this->workbookManager->setColumnWidthForRange($width, $start, $end, $flush);
     }
     
     /**
